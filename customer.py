@@ -1,12 +1,16 @@
 class Customer:
     def __init__(self, info, type):
         self.type = type
+        self.dist = {}
         if self.type is 'customer':
             if len(info) is 10:
                 self.i, self.x, self.y, self.d, self.q, self.f, self.a, self.list, self.e, self.l = info
             if len(info) is 8:
                 self.e, self.l = [None, None]
                 self.i, self.x, self.y, self.d, self.q, self.f, self.a, self.list = info
+            for l in self.list:
+                l = int(round(l))
+            self.i = int(round(self.i))
         elif self.type is 'depot':
             self.i, self.x, self.y, self.d, self.q, self.f, self.a = info
 

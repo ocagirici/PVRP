@@ -1,8 +1,3 @@
-bin = "00100101"
-i = 0
-d = []
-for b in bin:
-    if b is '1':
-        d.append(i)
-    i += 1
-print(d)
+a = [2, 3, 7, 1]
+a.insert(-1,5)
+print(a)

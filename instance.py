@@ -1,9 +1,9 @@
-from vehicle import Truck
-from vehicle import Preseller
+from vehicle import Truck, Preseller
 from customer import Customer
 from math import sqrt
 import matplotlib.pyplot as plt
 from random import choice
+
 
 def numbers_to_strings(argument):
     switcher = {
@@ -19,6 +19,9 @@ def numbers_to_strings(argument):
     return switcher.get(argument, "nothing")
 
 
+def euclidean(i, j):
+    return sqrt((i.x - j.x)**2 + (i.y - j.y)**2)
+
 class Instance:
 
     def __init__(self, id, type, m, n, t):
@@ -32,9 +35,9 @@ class Instance:
         self.customers = []                         # initialize customers as empty list
         self.size = 0
 
-    def add_vehicle(self, D, Q):
-        self.trucks.append(Truck(D, Q))
-        self.presellers.append(Preseller(D, Q))
+    def add_vehicle(self, id, D, Q):
+        self.trucks.append(Truck(id, D, Q, self.t))
+        self.presellers.append(Preseller(id, D, Q, self.t))
 
     def add_customer(self, info):
         self.customers.append(Customer(info, 'customer'))
@@ -56,39 +59,43 @@ class Instance:
             st += repr(c)
         return st
 
-    def euclidean(self, i, j):
-        return sqrt((self.customers[i].x - self.customers[j].x)**2 + (self.customers[i].y - self.customers[j].y)**2)
-
     def sort_customers(self):
         self.customers.sort(key=lambda x: x.d + x.q, reverse=True)
 
     def pick_random_assignment(self, list):
         r = choice(list)
-        bin = "{0:0{1}b}".format(r, self.t)
+        bin = '{0:0{1}b}'.format(int(r), int(self.t))
         i = 0
         d = []
         for b in bin:
             if b is '1':
-                d.append(int(b))
+                d.append(int(i))
+            i += 1
         return d
 
     def random_truck(self):
         return choice(self.trucks)
 
     def find_initial_solution(self):
-        for i in range(self.t):                             # iterate on number of days
-            self.trucks[i].schedule.append([0])             # append depot to the trucks' schedule
-            self.presellers[i].schedule.append([0])         # append depot to the presellers' schedule
-        self.sort_customers()                               # sort customers w.r.t (d + q) values
+        for i in range(self.t):
+            for j in self.trucks:
+                j.append_depot(i, self.customers[0])
         for i in self.customers:
-            random_assignment = self.pick_random_assignment(i.list)
-            for day in random_assignment:
-               self.random_truck().append_to_schedule(day, i)
+            i.dist[0] = euclidean(i, self.customers[0])
+            for j in self.customers:
+                dist = euclidean(i, j)
+                i.dist[j] = dist
+                j.dist[i] = dist
+        self.sort_customers()                               # sort customers w.r.t (d + q) values
+        for i in self.customers:                            # iterate on customers
+            if i.type is not 'depot':
+                random_assignment = self.pick_random_assignment(i.list)  # pick random assignment from the customer's list
+                for day in random_assignment:                            # for each day (1 in the binary representation
+                                                                         # of the possible schedule),
+                    self.random_truck().append_to_schedule(day, i)
 
-
-
-
-
+        for t in self.trucks:
+            t.print_schedule()
 
     def plot(self):
         dx = self.customers[0].x
