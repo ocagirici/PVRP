@@ -33,7 +33,7 @@ for i in range(1, 43):                                              # for i = 1;
             instance.add_customer(parse_info(info))                 # add a customer to the instance
         instances.append(instance)                                  # the instance is appended to instances list
 
-instances[1].find_initial_solution()
+instances[3].find_initial_solution()
 # The instances are read from the files #
 
 
