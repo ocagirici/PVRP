@@ -43,10 +43,9 @@ class Truck(Vehicle):
         min = i
         dist = inf
         while j < len(self.schedule[day]):
-            dist = customer.dist[self.schedule[day][min]] + customer.dist[self.schedule[day][min + 1]]
             if customer.dist[self.schedule[day][i]] + customer.dist[self.schedule[day][j]] < dist:
                 min = i
-                print('min', min)
+                dist = customer.dist[self.schedule[day][min]] + customer.dist[self.schedule[day][min + 1]]
             i += 1
             j += 1
         return min, dist
@@ -58,26 +57,9 @@ class Truck(Vehicle):
             return False
         min, dist = self.find_minimum_cost(day, customer)
         self.schedule[day].insert((min+1), customer.i)
-        print(self.id, ',', day, ':', self.schedule[day])
-        # self.schedule[day].insert(-1, customer.i)
         self.load[day] += customer.q
-        print('time:', self.time[day])
         self.time[day] += dist
-        print('time:', self.time[day])
-        print(
-                'insert:', self.schedule[day][min+1], \
-                'dist(', self.schedule[day][min], ',', self.schedule[day][min+2], ')=', \
-                instance.customers[self.schedule[day][min]].dist[self.schedule[day][min+2]],\
-                euclidean(instance.customers[self.schedule[day][min]],
-                          instance.customers[self.schedule[day][min+2]]
-                          ))
-        print('customers:', instance.customers[self.schedule[day][min]], instance.customers[self.schedule[day][min+2]])
         self.time[day] -= instance.customers[self.schedule[day][min]].dist[self.schedule[day][min+2]]
-        print('time:', self.time[day])
-        # self.time[day] -= self.turning_back
-        # self.time[day] += customer.dist[0]
-        # self.turning_back = customer.dist[0]
-        # self.last_visited = customer
         return True
 
     def print_schedule(self):
@@ -89,26 +71,39 @@ class Truck(Vehicle):
                 print(' Overloaded!', end="", flush=True)
             print('\n')
 
+    def print_satisfied(self):
+        for d, s in self.schedule.items():
+            print(sorted(s))
+
 
 class Preseller(Vehicle):
-    def append_to_schedule(self, day, customer):
+    def find_minimum_cost(self, day, customer):
+        i, j = 0, 1
+        min = i
+        dist = inf
+        while j < len(self.schedule[day]):
+            if customer.dist[self.schedule[day][i]] + customer.dist[self.schedule[day][j]] < dist:
+                min = i
+                dist = customer.dist[self.schedule[day][min]] + customer.dist[self.schedule[day][min + 1]]
+            i += 1
+            j += 1
+        return min, dist
+
+    def append_to_schedule(self, day, customer, instance):
         if customer.i in self.schedule[day]:
             return True
-        if self.time[day] + customer.d + customer.dist[self.last_visited] + customer.dist[0] > self.D:
+        if self.time[day] + customer.d > self.D:
             return False
-
-        self.schedule[day].insert(-1, customer.i)
-        self.time[day] += customer.dist[self.last_visited]
-        self.time[day] -= self.turning_back
-        self.time[day] += customer.dist[0]
-        self.turning_back = customer.dist[0]
-        self.last_visited = customer
+        min, dist = self.find_minimum_cost(day, customer)
+        self.schedule[day].insert((min+1), customer.i)
+        self.time[day] += dist
+        self.time[day] -= instance.customers[self.schedule[day][min]].dist[self.schedule[day][min+2]]
         return True
 
     def print_schedule(self):
         print('Preseller', self.id, ':')
         for d, s in self.schedule.items():
-            print("Day {0}: {1}\t\tLoad: {2:.2f}\t\t Time: {3:.2f}".format(d, s, self.load[d], self.time[d]),
+            print("Day {0}: {1}\t\t Time: {3:.2f}".format(d, s, self.time[d]),
                   end="", flush=True)
             if self.time[d] > self.D:
                 print(' Overloaded!', end="", flush=True)

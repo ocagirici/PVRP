@@ -3,7 +3,7 @@ from customer import Customer
 from math import sqrt
 import matplotlib.pyplot as plt
 from random import choice
-
+from copy import copy
 
 def numbers_to_strings(argument):
     switcher = {
@@ -26,7 +26,7 @@ class Instance:
 
     def __init__(self, id, type, m, n, t):
         self.id = id
-        self.type = numbers_to_strings(type)
+        self.type = type
         self.m = m
         self.n = n
         self.t = t
@@ -56,8 +56,18 @@ class Instance:
         st = st[:-1]
         st += 'customers:\n'
         for c in self.customers:
-            st += repr(c)
+            st += c.type + '\t'
+            for a in c.attributes:
+                st += repr(a) + '\t'
+            st += '\n'
         return st
+
+    def compute_distances(self):
+        for i in self.customers:
+            for j in self.customers:
+                dist = euclidean(i, j)
+                i.dist[j.i] = dist
+                j.dist[i.i] = dist
 
     def sort_customers(self):
         self.customers.sort(key=lambda x: x.d + x.q, reverse=True)
@@ -77,7 +87,6 @@ class Instance:
             if b is '1':
                 d.append(int(i))
             i += 1
-        list.remove(r)
         return d
 
     def random_truck(self):
@@ -92,35 +101,76 @@ class Instance:
                 j.append_depot(i, self.customers[0])
             for j in self.presellers:
                 j.append_depot(i, self.customers[0])
-        for i in self.customers:
-            for j in self.customers:
-                dist = euclidean(i, j)
-                i.dist[j.i] = dist
-                j.dist[i.i] = dist
-                                  # sort customers w.r.t (d + q) values
+        unsatisfied = copy(self.customers)
+        satisfied = []
+        partially_satisfied = []
+        self.sort_customers()
         for i in self.customers:                            # iterate on customers
             if i.type is not 'depot':
                 random_assignment = self.pick_random_assignment(i.list)  # pick random assignment from the customer's list
+                satisfied_days = 0
                 for day in random_assignment:                            # for each day (1 in the binary representation
                     limit = 0                                            # of the possible schedule),
-                    while not self.random_truck().append_to_schedule(day, i, self) and (limit < 100): #  if the load limit is exceeded
-                         limit += 1
+                    appended = self.random_truck().append_to_schedule(day, i, self)
+                    while not appended and limit < 100:
+                        appended = self.random_truck().append_to_schedule(day, i, self)
+                        limit += 1
+                    if limit < 100:
+                        satisfied_days += 1
+                if satisfied_days != 0:
+                    unsatisfied.remove(i)
+                    if satisfied_days == len(random_assignment):
+                        satisfied.append(i)
+                    else:
+                        partially_satisfied.append(i)
+            else:
+                unsatisfied.remove(i)
 
-                    # limit = 0
-                    # while (not self.random_preseller().append_to_schedule(day, i)) and (limit < 100): #  if the time limit is exceeded
-                    #     self.random_preseller().append_to_schedule(day, i)
-                    #     limit += 1
+        print('{:3d}: T({:5d}:{:5d}:{:5d})'.format(self.id, len(unsatisfied), len(partially_satisfied), len(satisfied)), end="", flush=True)
+
+        unsatisfied = copy(self.customers)
+        satisfied = []
+        partially_satisfied = []
+        for i in self.customers:                            # iterate on customers
+            if i.type is not 'depot':
+                random_assignment = self.pick_random_assignment(i.list)  # pick random assignment from the customer's list
+                satisfied_days = 0
+                for day in random_assignment:                            # for each day (1 in the binary representation
+                    limit = 0                                            # of the possible schedule),
+                    appended = self.random_preseller().append_to_schedule(day, i, self)
+                    while not appended and limit < 100:
+                        appended = self.random_preseller().append_to_schedule(day, i, self)
+                        limit += 1
+                    if limit < 100:
+                        satisfied_days += 1
+                if satisfied_days != 0:
+                    unsatisfied.remove(i)
+                    if satisfied_days == len(random_assignment):
+                        satisfied.append(i)
+                    else:
+                        partially_satisfied.append(i)
+            else:
+                unsatisfied.remove(i)
+        print(' P({:5d}:{:5d}:{:5d})'.format(len(unsatisfied), len(partially_satisfied), len(satisfied)))
+        # for t in self.trucks:
+        #      t.print_schedule()
+
+    def to_file(self):
+        st = repr(self.type) + ' ' + repr(self.m) + ' ' + repr(self.n) + ' ' + repr(self.t) + '\n'
         for t in self.trucks:
-            t.print_schedule()
-            for d, s in t.schedule.items():
-                print('Day', d, 'cost:', t.load[d], 'time:', t.time[d])
-                sum = 0
-                for c in range(len(s)-1):
-                    sum += self.customers[s[c]].dist[s[c+1]]
-                print('sum:', sum)
+            st += repr(t.D) + ' ' + repr(t.Q) + '\n'
+        for c in self.customers:
+            st += '{:3d} {} {} {:.2f} {:.2f} {:d} '.format(c.i, c.x, c.y, c.d, c.q, int(c.f))
+            if c.type is not 'depot':
+                for l in c.list:
+                    st += repr(l) + ' '
+                if c.e is not None:
+                    st += repr(c.e) + ' '
+                if c.l is not None:
+                    st += repr(c.l)
+            st +='\n'
 
-        for p in self.presellers:
-            p.print_schedule()
+        return st
 
     def plot(self):
         dx = self.customers[0].x

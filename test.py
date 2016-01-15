@@ -1,6 +1,5 @@
 from instance import Instance
 
-
 def parse_info(st):
     i, x, y, d, q, f, a = st[0:7]
     list = st[7:int(8 + a)]
@@ -32,8 +31,22 @@ for i in range(1, 43):                                              # for i = 1;
             info = [float(y) for y in lines[j].split()]             # read i x y d q f a list e l values from text file
             instance.add_customer(parse_info(info))                 # add a customer to the instance
         instances.append(instance)                                  # the instance is appended to instances list
+        instance.compute_distances()
 
-instances[3].find_initial_solution()
+for instance in instances:
+    print('modifying instance', instance.id)
+    sum = 0
+    for i in instance.customers:
+        if i.type is not 'depot':
+            sum += i.q*i.f + i.distance_to_10th_nearest()
+        else:
+            sum += instance.m * i.distance_to_10th_nearest()
+    result = sum/(instance.t*instance.m)
+
+print(instances[13].to_file())
+
+# for i in range(42):
+#     |[i].find_initial_solution()
 # The instances are read from the files #
 
 
