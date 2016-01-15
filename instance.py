@@ -39,6 +39,12 @@ class Instance:
         self.trucks.append(Truck(id, D, Q, self.t))
         self.presellers.append(Preseller(id, Q, D, self.t))
 
+    def add_truck(self, id, D, Q):
+        self.trucks.append(Truck(id, D, Q, self.t))
+
+    def add_preseller(self, id, D, Q):
+        self.presellers.append(Preseller(id, D, Q, self.t))
+
     def add_customer(self, info):
         self.customers.append(Customer(info, 'customer'))
         self.size += 1
@@ -156,21 +162,22 @@ class Instance:
         #      t.print_schedule()
 
     def to_file(self):
-        st = repr(self.type) + ' ' + repr(self.m) + ' ' + repr(self.n) + ' ' + repr(self.t) + '\n'
-        for t in self.trucks:
-            st += repr(t.D) + ' ' + repr(t.Q) + '\n'
-        for c in self.customers:
-            st += '{:3d} {} {} {:.2f} {:.2f} {:d} '.format(c.i, c.x, c.y, c.d, c.q, int(c.f))
-            if c.type is not 'depot':
-                for l in c.list:
-                    st += repr(l) + ' '
-                if c.e is not None:
-                    st += repr(c.e) + ' '
-                if c.l is not None:
-                    st += repr(c.l)
-            st +='\n'
-
-        return st
+            st = repr(self.type) + ' ' + repr(self.m) + ' ' + repr(self.n) + ' ' + repr(self.t) + '\n'
+            for t in self.trucks:
+                st += repr(t.D) + ' ' + repr(t.Q) + '\n'
+            for p in self.presellers:
+                st += repr(p.D) + ' ' + repr(p.Q) + '\n'
+            for c in self.customers:
+                st += '{:3d} {} {} {:.2f} {:.2f} {:.2f} {:d} '.format(c.i, c.x, c.y, c.d, c.q, c.f, int(c.a))
+                if c.type is not 'depot':
+                    for l in c.list:
+                        st += repr(l) + ' '
+                    if c.e is not None:
+                        st += repr(c.e) + ' '
+                    if c.l is not None:
+                        st += repr(c.l)
+                st += '\n'
+            return st
 
     def plot(self):
         dx = self.customers[0].x
